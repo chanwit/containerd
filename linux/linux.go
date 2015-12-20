@@ -626,39 +626,45 @@ func (rt *libcontainerRuntime) createCgroupConfig(name string, spec *specs.Linux
 	}
 	cr.Resources = c
 	r := spec.Linux.Resources
-	c.Memory = r.Memory.Limit
-	c.MemoryReservation = r.Memory.Reservation
-	c.MemorySwap = r.Memory.Swap
-	c.KernelMemory = r.Memory.Kernel
-	c.MemorySwappiness = r.Memory.Swappiness
-	c.CpuShares = r.CPU.Shares
-	c.CpuQuota = r.CPU.Quota
-	c.CpuPeriod = r.CPU.Period
-	c.CpuRtRuntime = r.CPU.RealtimeRuntime
-	c.CpuRtPeriod = r.CPU.RealtimePeriod
-	c.CpusetCpus = r.CPU.Cpus
-	c.CpusetMems = r.CPU.Mems
-	c.BlkioWeight = r.BlockIO.Weight
-	c.BlkioLeafWeight = r.BlockIO.LeafWeight
-	for _, wd := range r.BlockIO.WeightDevice {
-		weightDevice := configs.NewWeightDevice(wd.Major, wd.Minor, *wd.Weight, *wd.LeafWeight)
-		c.BlkioWeightDevice = append(c.BlkioWeightDevice, weightDevice)
+	if r.Memory != nil {
+		c.Memory = r.Memory.Limit
+		c.MemoryReservation = r.Memory.Reservation
+		c.MemorySwap = r.Memory.Swap
+		c.KernelMemory = r.Memory.Kernel
+		c.MemorySwappiness = r.Memory.Swappiness
 	}
-	for _, td := range r.BlockIO.ThrottleReadBpsDevice {
-		throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
-		c.BlkioThrottleReadBpsDevice = append(c.BlkioThrottleReadBpsDevice, throttleDevice)
+	if r.CPU != nil {
+		c.CpuShares = r.CPU.Shares
+		c.CpuQuota = r.CPU.Quota
+		c.CpuPeriod = r.CPU.Period
+		c.CpuRtRuntime = r.CPU.RealtimeRuntime
+		c.CpuRtPeriod = r.CPU.RealtimePeriod
+		c.CpusetCpus = r.CPU.Cpus
+		c.CpusetMems = r.CPU.Mems
 	}
-	for _, td := range r.BlockIO.ThrottleWriteBpsDevice {
-		throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
-		c.BlkioThrottleWriteBpsDevice = append(c.BlkioThrottleWriteBpsDevice, throttleDevice)
-	}
-	for _, td := range r.BlockIO.ThrottleReadIOPSDevice {
-		throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
-		c.BlkioThrottleReadIOPSDevice = append(c.BlkioThrottleReadIOPSDevice, throttleDevice)
-	}
-	for _, td := range r.BlockIO.ThrottleWriteIOPSDevice {
-		throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
-		c.BlkioThrottleWriteIOPSDevice = append(c.BlkioThrottleWriteIOPSDevice, throttleDevice)
+	if r.BlockIO != nil {
+		c.BlkioWeight = r.BlockIO.Weight
+		c.BlkioLeafWeight = r.BlockIO.LeafWeight
+		for _, wd := range r.BlockIO.WeightDevice {
+			weightDevice := configs.NewWeightDevice(wd.Major, wd.Minor, *wd.Weight, *wd.LeafWeight)
+			c.BlkioWeightDevice = append(c.BlkioWeightDevice, weightDevice)
+		}
+		for _, td := range r.BlockIO.ThrottleReadBpsDevice {
+			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
+			c.BlkioThrottleReadBpsDevice = append(c.BlkioThrottleReadBpsDevice, throttleDevice)
+		}
+		for _, td := range r.BlockIO.ThrottleWriteBpsDevice {
+			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
+			c.BlkioThrottleWriteBpsDevice = append(c.BlkioThrottleWriteBpsDevice, throttleDevice)
+		}
+		for _, td := range r.BlockIO.ThrottleReadIOPSDevice {
+			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
+			c.BlkioThrottleReadIOPSDevice = append(c.BlkioThrottleReadIOPSDevice, throttleDevice)
+		}
+		for _, td := range r.BlockIO.ThrottleWriteIOPSDevice {
+			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
+			c.BlkioThrottleWriteIOPSDevice = append(c.BlkioThrottleWriteIOPSDevice, throttleDevice)
+		}
 	}
 	for _, l := range r.HugepageLimits {
 		c.HugetlbLimit = append(c.HugetlbLimit, &configs.HugepageLimit{
@@ -667,12 +673,15 @@ func (rt *libcontainerRuntime) createCgroupConfig(name string, spec *specs.Linux
 		})
 	}
 	c.OomKillDisable = r.DisableOOMKiller
-	c.NetClsClassid = r.Network.ClassID
-	for _, m := range r.Network.Priorities {
-		c.NetPrioIfpriomap = append(c.NetPrioIfpriomap, &configs.IfPrioMap{
-			Interface: m.Name,
-			Priority:  m.Priority,
-		})
+
+	if r.Network != nil {
+		c.NetClsClassid = r.Network.ClassID
+		for _, m := range r.Network.Priorities {
+			c.NetPrioIfpriomap = append(c.NetPrioIfpriomap, &configs.IfPrioMap{
+				Interface: m.Name,
+				Priority:  m.Priority,
+			})
+		}
 	}
 	return cr, nil
 }
