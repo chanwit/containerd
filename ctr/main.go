@@ -29,7 +29,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "address",
-			Value: "/run/containerd/containerd.sock",
+			Value: "unix:///run/containerd/containerd.sock",
 			Usage: "address of GRPC API",
 		},
 	}
@@ -37,6 +37,7 @@ func main() {
 		CheckpointCommand,
 		ContainersCommand,
 		EventsCommand,
+		PeersCommand,
 		VersionCommand,
 	}
 	app.Before = func(context *cli.Context) error {

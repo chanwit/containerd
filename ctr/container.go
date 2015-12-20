@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -30,7 +31,11 @@ func getClientConn(ctx *cli.Context) *grpc.ClientConn {
 	dialOpts := []grpc.DialOption{grpc.WithInsecure()}
 	dialOpts = append(dialOpts,
 		grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {
-			return net.DialTimeout("unix", addr, timeout)
+			parts := strings.SplitN(addr, "://", 2)
+			if len(parts) != 2 {
+				return nil, fmt.Errorf("Addr format error")
+			}
+			return net.DialTimeout(parts[0], parts[1], timeout)
 		},
 		))
 	conn, err := grpc.Dial(ctx.GlobalString("address"), dialOpts...)

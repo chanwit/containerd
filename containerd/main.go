@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -22,6 +24,7 @@ import (
 	"github.com/docker/containerd/api/grpc/types"
 	"github.com/docker/containerd/supervisor"
 	"github.com/docker/containerd/util"
+	"github.com/docker/containerd/peer"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -64,7 +67,7 @@ var daemonFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:  "listen,l",
-		Value: "/run/containerd/containerd.sock",
+		Value: "unix:///run/containerd/containerd.sock",
 		Usage: "Address on which GRPC API will listen",
 	},
 	cli.BoolFlag{
@@ -74,6 +77,20 @@ var daemonFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:  "graphite-address",
 		Usage: "Address of graphite server",
+	},
+	cli.StringFlag{
+		Name: "peers,p",
+		Usage: "Container peers",
+	},
+	cli.StringFlag{
+		Name: "serf-binding-addr",
+		Usage: "Serf binding address",
+		Value: "0.0.0.0",
+	},
+	cli.IntFlag{
+		Name: "serf-port",
+		Usage: "Serf port",
+		Value: 3388,
 	},
 }
 
@@ -103,6 +120,9 @@ func main() {
 			context.String("state-dir"),
 			context.Int("concurrency"),
 			context.Bool("oom-notify"),
+			context.String("peers"),
+			context.String("serf-binding-addr"),
+			context.Int("serf-port"),
 		); err != nil {
 			logrus.Fatal(err)
 		}
@@ -182,7 +202,7 @@ func processMetrics() {
 	}()
 }
 
-func daemon(id, address, stateDir string, concurrency int, oom bool) error {
+func daemon(id, address, stateDir string, concurrency int, oom bool, peers string, serfAddr string, serfPort int) error {
 	tasks := make(chan *supervisor.StartTask, concurrency*100)
 	sv, err := supervisor.New(id, stateDir, tasks, oom)
 	if err != nil {
@@ -211,12 +231,41 @@ func daemon(id, address, stateDir string, concurrency int, oom bool) error {
 	if err := os.RemoveAll(address); err != nil {
 		return err
 	}
-	l, err := net.Listen("unix", address)
+	parts := strings.SplitN(address, "://", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("Error address: %s", address)
+	}
+	l, err := net.Listen(parts[0], parts[1])
 	if err != nil {
 		return err
 	}
+
+	var agent *peer.Agent
+	if peers == "" {
+		// start serf as mamager
+		agent, err = peer.CreateAsManager(id, address, serfAddr, serfPort)
+		if err != nil {
+			panic(err)
+		}
+		agent.Start()
+		go agent.EventLoop()
+	} else {
+		// start serf as peer
+		agent, err = peer.Create(id, address, serfAddr, serfPort)
+		if err != nil {
+			panic(err)
+		}
+		addrs := strings.Split(peers, ",")
+		agent.Start()
+		_, err = agent.Join(addrs, false)
+		if err != nil {
+			logrus.Info(err)
+		}
+		go agent.EventLoop()
+	}
+
 	s := grpc.NewServer()
-	types.RegisterAPIServer(s, server.NewServer(sv))
+	types.RegisterAPIServer(s, server.NewServer(sv, agent.Serf()))
 	protoversion.RegisterAPIServer(
 		s,
 		protoversion.NewAPIServer(

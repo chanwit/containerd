@@ -13,6 +13,8 @@ service API {
 	rpc State(StateRequest) returns (StateResponse) {}
 	rpc Events(EventsRequest) returns (stream Event) {}
 	rpc GetStats(StatsRequest) returns (stream Stats) {}
+
+	rpc ListPeers(PeersRequest) returns (PeersResponse) {}
 }
 
 message CreateContainerRequest {
@@ -237,4 +239,11 @@ message Stats {
 
 message StatsRequest {
 	string id = 1;
+}
+
+message PeersRequest {
+}
+
+message PeersResponse {
+	repeated string peers = 1;
 }
