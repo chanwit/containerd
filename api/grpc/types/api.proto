@@ -244,6 +244,11 @@ message StatsRequest {
 message PeersRequest {
 }
 
+message Peer {
+	string address = 1;
+	string status = 2;
+}
+
 message PeersResponse {
-	repeated string peers = 1;
+	repeated Peer peers = 1;
 }

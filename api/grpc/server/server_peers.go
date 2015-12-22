@@ -6,10 +6,11 @@ import (
 )
 
 func (s *apiServer) ListPeers(ctx context.Context, r *types.PeersRequest) (*types.PeersResponse, error) {
-	peers := []string{}
+	peers := []*types.Peer{}
 	for _, m := range s.serf.Members() {
 		// log.Infof("Node(%s) = ADDR(%s)", m.Name, m.Tags["ADVERTISE_ADDR"])
-		peers = append(peers, m.Tags["ADVERTISE_ADDR"])
+		peer := &types.Peer{m.Tags["ADVERTISE_ADDR"], m.Status.String()}
+		peers = append(peers, peer)
 	}
 	return &types.PeersResponse{
 		Peers: peers,

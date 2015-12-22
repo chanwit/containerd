@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	// "path"
 	"text/tabwriter"
 
 	"github.com/codegangsta/cli"
@@ -31,14 +32,21 @@ func listPeers(context *cli.Context) {
 		c = getClient(context)
 	)
 
+	// os.MkdirAll(path.Join(os.Getenv("HOME"), ".ctr"), 0744)
+	// knownPeers := path.Join(os.Getenv("HOME"), ".ctr", "known_peers")
+
+	// TODO f := os.OpenFile(knownPeers, ..., ...)
+	// defer f.Close()
+
 	resp, err := c.ListPeers(netcontext.Background(), &types.PeersRequest{})
 	if err != nil {
 		fatal(err.Error(), 1)
 	}
 	w := tabwriter.NewWriter(os.Stdout, 20, 1, 3, ' ', 0)
-	fmt.Fprint(w, "PEER\n")
+	fmt.Fprint(w, "PEER\tSTATUS\n")
 	for _, p := range resp.Peers {
-		fmt.Fprintf(w, "%s\n", p)
+		fmt.Fprintf(w, "%s\t%s\n", p.Address, p.Status)
+		// fmt.Fprintf(f, "%s\n", p)
 	}
 	if err := w.Flush(); err != nil {
 		fatal(err.Error(), 1)

@@ -650,19 +650,19 @@ func (rt *libcontainerRuntime) createCgroupConfig(name string, spec *specs.Linux
 			c.BlkioWeightDevice = append(c.BlkioWeightDevice, weightDevice)
 		}
 		for _, td := range r.BlockIO.ThrottleReadBpsDevice {
-			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
+			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, *td.Rate)
 			c.BlkioThrottleReadBpsDevice = append(c.BlkioThrottleReadBpsDevice, throttleDevice)
 		}
 		for _, td := range r.BlockIO.ThrottleWriteBpsDevice {
-			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
+			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, *td.Rate)
 			c.BlkioThrottleWriteBpsDevice = append(c.BlkioThrottleWriteBpsDevice, throttleDevice)
 		}
 		for _, td := range r.BlockIO.ThrottleReadIOPSDevice {
-			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
+			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, *td.Rate)
 			c.BlkioThrottleReadIOPSDevice = append(c.BlkioThrottleReadIOPSDevice, throttleDevice)
 		}
 		for _, td := range r.BlockIO.ThrottleWriteIOPSDevice {
-			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, td.Rate)
+			throttleDevice := configs.NewThrottleDevice(td.Major, td.Minor, *td.Rate)
 			c.BlkioThrottleWriteIOPSDevice = append(c.BlkioThrottleWriteIOPSDevice, throttleDevice)
 		}
 	}
