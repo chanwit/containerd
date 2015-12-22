@@ -29,7 +29,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "address",
-			Value: "unix:///run/containerd/containerd.sock",
+			Value: "", // unix:///run/containerd/containerd.sock",
 			Usage: "address of GRPC API",
 		},
 	}

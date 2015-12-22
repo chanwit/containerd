@@ -38,7 +38,24 @@ func getClientConn(ctx *cli.Context) *grpc.ClientConn {
 			return net.DialTimeout(parts[0], parts[1], timeout)
 		},
 		))
-	conn, err := grpc.Dial(ctx.GlobalString("address"), dialOpts...)
+
+	address := ctx.GlobalString("address")
+	if address == "" {
+		peers := load()
+		for _, p := range peers {
+			if p.Status == "alive" {
+				address = p.Address
+				break
+			}
+		}
+	}
+
+	// OK, goes with the default
+	if address == "" {
+		address = "unix:///run/containerd/containerd.sock"
+	}
+
+	conn, err := grpc.Dial(address, dialOpts...)
 	if err != nil {
 		fatal(err.Error(), 1)
 	}

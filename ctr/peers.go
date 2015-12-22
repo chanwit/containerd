@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
-	// "path"
 	"text/tabwriter"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/containerd/api/grpc/types"
 	netcontext "golang.org/x/net/context"
+	"gopkg.in/yaml.v2"
 )
 
 var PeersCommand = cli.Command{
@@ -46,9 +47,22 @@ func listPeers(context *cli.Context) {
 	fmt.Fprint(w, "PEER\tSTATUS\n")
 	for _, p := range resp.Peers {
 		fmt.Fprintf(w, "%s\t%s\n", p.Address, p.Status)
-		// fmt.Fprintf(f, "%s\n", p)
 	}
 	if err := w.Flush(); err != nil {
 		fatal(err.Error(), 1)
 	}
+
+	save(resp.Peers)
+}
+
+func save(peers []*types.Peer) {
+	out, _ := yaml.Marshal(peers)
+	ioutil.WriteFile("./known_peers", out, 0644)
+}
+
+func load() []*types.Peer {
+	data, _ := ioutil.ReadFile("./known_peers")
+	peers := []*types.Peer{}
+	yaml.Unmarshal(data, &peers)
+	return peers
 }
