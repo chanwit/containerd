@@ -10,9 +10,9 @@ import (
 )
 
 type Agent struct {
-	conf *serf.Config
+	conf    *serf.Config
 	eventCh chan serf.Event
-	serf *serf.Serf
+	serf    *serf.Serf
 
 	shutdown     bool
 	shutdownCh   chan struct{}
@@ -51,9 +51,9 @@ func Create(id string, advertiseAddr string, serfAddr string, serfPort int) (*Ag
 
 	// Setup the agent
 	agent := &Agent{
-		conf: conf,
-		eventCh: eventCh,
-		isManager: false,
+		conf:       conf,
+		eventCh:    eventCh,
+		isManager:  false,
 		shutdownCh: make(chan struct{}),
 	}
 

@@ -28,7 +28,7 @@ var ListPeerCommand = cli.Command{
 
 func listPeers(context *cli.Context) {
 	var (
-		c  = getClient(context)
+		c = getClient(context)
 	)
 
 	resp, err := c.ListPeers(netcontext.Background(), &types.PeersRequest{})

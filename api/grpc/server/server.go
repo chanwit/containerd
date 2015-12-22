@@ -11,20 +11,20 @@ import (
 	"github.com/docker/containerd/api/grpc/types"
 	"github.com/docker/containerd/runtime"
 	"github.com/docker/containerd/supervisor"
+	"github.com/hashicorp/serf/serf"
 	"github.com/opencontainers/specs"
 	"golang.org/x/net/context"
-	"github.com/hashicorp/serf/serf"
 )
 
 type apiServer struct {
-	sv *supervisor.Supervisor
+	sv   *supervisor.Supervisor
 	serf *serf.Serf
 }
 
 // NewServer returns grpc server instance
 func NewServer(sv *supervisor.Supervisor, serf *serf.Serf) types.APIServer {
 	return &apiServer{
-		sv: sv,
+		sv:   sv,
 		serf: serf,
 	}
 }

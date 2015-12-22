@@ -22,9 +22,9 @@ import (
 	"github.com/docker/containerd"
 	"github.com/docker/containerd/api/grpc/server"
 	"github.com/docker/containerd/api/grpc/types"
+	"github.com/docker/containerd/peer"
 	"github.com/docker/containerd/supervisor"
 	"github.com/docker/containerd/util"
-	"github.com/docker/containerd/peer"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -79,16 +79,16 @@ var daemonFlags = []cli.Flag{
 		Usage: "Address of graphite server",
 	},
 	cli.StringFlag{
-		Name: "peers,p",
+		Name:  "peers,p",
 		Usage: "Container peers",
 	},
 	cli.StringFlag{
-		Name: "serf-binding-addr",
+		Name:  "serf-binding-addr",
 		Usage: "Serf binding address",
 		Value: "0.0.0.0",
 	},
 	cli.IntFlag{
-		Name: "serf-port",
+		Name:  "serf-port",
 		Usage: "Serf port",
 		Value: 3388,
 	},

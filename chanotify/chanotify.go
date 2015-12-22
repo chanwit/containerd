@@ -87,7 +87,7 @@ func (s *Notifier) start() {
 func (s *Notifier) createCase() []reflect.SelectCase {
 	// put ctrl channel as 0 element of select
 	out := []reflect.SelectCase{
-		reflect.SelectCase{
+		{
 			Dir:  reflect.SelectRecv,
 			Chan: reflect.ValueOf(s.ctrl),
 		},

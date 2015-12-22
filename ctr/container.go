@@ -8,8 +8,8 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"syscall"
 	"strings"
+	"syscall"
 	"text/tabwriter"
 	"time"
 
