@@ -127,6 +127,7 @@ func main() {
 			logrus.Fatal(err)
 		}
 	}
+	logrus.SetLevel(logrus.InfoLevel)
 	if err := app.Run(os.Args); err != nil {
 		logrus.Fatal(err)
 	}
@@ -203,8 +204,34 @@ func processMetrics() {
 }
 
 func daemon(id, address, stateDir string, concurrency int, oom bool, peers string, serfAddr string, serfPort int) error {
+
+	var agent *peer.Agent
+	var err error
+	if peers == "" {
+		// start serf as mamager
+		agent, err = peer.CreateAsManager(id, address, serfAddr, serfPort)
+		if err != nil {
+			panic(err)
+		}
+		agent.Start()
+		go agent.EventLoop()
+	} else {
+		// start serf as peer
+		agent, err = peer.Create(id, address, serfAddr, serfPort)
+		if err != nil {
+			panic(err)
+		}
+		addrs := strings.Split(peers, ",")
+		agent.Start()
+		_, err = agent.Join(addrs, false)
+		if err != nil {
+			logrus.Info(err)
+		}
+		go agent.EventLoop()
+	}
+
 	tasks := make(chan *supervisor.StartTask, concurrency*100)
-	sv, err := supervisor.New(id, stateDir, tasks, oom)
+	sv, err := supervisor.New(id, stateDir, tasks, oom, agent.Serf())
 	if err != nil {
 		return err
 	}
@@ -238,30 +265,6 @@ func daemon(id, address, stateDir string, concurrency int, oom bool, peers strin
 	l, err := net.Listen(parts[0], parts[1])
 	if err != nil {
 		return err
-	}
-
-	var agent *peer.Agent
-	if peers == "" {
-		// start serf as mamager
-		agent, err = peer.CreateAsManager(id, address, serfAddr, serfPort)
-		if err != nil {
-			panic(err)
-		}
-		agent.Start()
-		go agent.EventLoop()
-	} else {
-		// start serf as peer
-		agent, err = peer.Create(id, address, serfAddr, serfPort)
-		if err != nil {
-			panic(err)
-		}
-		addrs := strings.Split(peers, ",")
-		agent.Start()
-		_, err = agent.Join(addrs, false)
-		if err != nil {
-			logrus.Info(err)
-		}
-		go agent.EventLoop()
 	}
 
 	s := grpc.NewServer()

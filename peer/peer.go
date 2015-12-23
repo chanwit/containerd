@@ -2,6 +2,7 @@ package peer
 
 import (
 	"fmt"
+	"io/ioutil"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
@@ -33,11 +34,12 @@ func Create(id string, advertiseAddr string, serfAddr string, serfPort int) (*Ag
 	conf.NodeName = id
 	conf.Tags["ADVERTISE_ADDR"] = advertiseAddr
 
-	logOutput := log.StandardLogger().Out
+	// log.SetLevel(log.InfoLevel)
+	// logOutput := log.StandardLogger().Out
 
 	// Setup the underlying loggers
-	conf.MemberlistConfig.LogOutput = logOutput
-	conf.LogOutput = logOutput
+	conf.MemberlistConfig.LogOutput = ioutil.Discard
+	conf.LogOutput = ioutil.Discard
 
 	// Create a channel to listen for events from Serf
 	eventCh := make(chan serf.Event, 64)
@@ -127,13 +129,12 @@ func (a *Agent) SerfConfig() *serf.Config {
 
 // Join asks the Serf instance to join. See the Serf.Join function.
 func (a *Agent) Join1(addr string) (n int, err error) {
-	// a.logger.Printf("[INFO] agent: joining: %v replay: %v", addrs, replay)
 	n, err = a.serf.Join([]string{addr}, true)
 	if n > 0 {
-		log.Info("agent: joined: %d nodes", n)
+		log.Infof("agent: joined: %d nodes", n)
 	}
 	if err != nil {
-		log.Warn("agent: error joining: %v", err)
+		log.Warnf("agent: error joining: %v", err)
 	}
 	return
 }
@@ -144,20 +145,20 @@ func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 	ignoreOld := !replay
 	n, err = a.serf.Join(addrs, ignoreOld)
 	if n > 0 {
-		log.Info("agent: joined: %d nodes", n)
+		log.Infof("agent: joined: %d nodes", n)
 	}
 	if err != nil {
-		log.Warn("agent: error joining: %v", err)
+		log.Warnf("agent: error joining: %v", err)
 	}
 	return
 }
 
 // ForceLeave is used to eject a failed node from the cluster
 func (a *Agent) ForceLeave(node string) error {
-	log.Info("agent: Force leaving node: %s", node)
+	log.Infof("agent: Force leaving node: %s", node)
 	err := a.serf.RemoveFailedNode(node)
 	if err != nil {
-		log.Info("agent: failed to remove node: %v", err)
+		log.Infof("agent: failed to remove node: %v", err)
 	}
 	return err
 }
@@ -179,6 +180,20 @@ func (a *Agent) EventLoop() {
 						log.Infof("Node(%s) = ADDR(%s)", m.Name, m.Tags["ADVERTISE_ADDR"])
 					}
 				}
+			}
+			if e.EventType() == serf.EventUser {
+				u := e.(serf.UserEvent)
+				log.Infof(">>> containerd (%s): %s - %s", a.conf.NodeName, u.Name, string(u.Payload))
+				/* switch u.Name {
+					case "C":
+						log.Infof("Node: %s, Create: %s", a.conf.NodeName, string(u.Payload))
+					case "R":
+						log.Infof("Get")
+					case "U":
+						log.Infof("Change")
+					case "D":
+						log.Infof("Delete")
+				}*/
 			}
 
 		case <-serfShutdownCh:

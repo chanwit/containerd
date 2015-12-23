@@ -12,6 +12,7 @@ import (
 	"github.com/docker/containerd/chanotify"
 	"github.com/docker/containerd/eventloop"
 	"github.com/docker/containerd/runtime"
+	"github.com/hashicorp/serf/serf"
 	"github.com/opencontainers/runc/libcontainer"
 )
 
@@ -21,7 +22,7 @@ const (
 )
 
 // New returns an initialized Process supervisor.
-func New(id, stateDir string, tasks chan *StartTask, oom bool) (*Supervisor, error) {
+func New(id, stateDir string, tasks chan *StartTask, oom bool, serf *serf.Serf) (*Supervisor, error) {
 	if err := os.MkdirAll(stateDir, 0755); err != nil {
 		return nil, err
 	}
@@ -44,6 +45,7 @@ func New(id, stateDir string, tasks chan *StartTask, oom bool) (*Supervisor, err
 		subscribers:    make(map[chan *Event]struct{}),
 		statsCollector: newStatsCollector(statsInterval),
 		el:             eventloop.NewChanLoop(defaultBufferSize),
+		serf:           serf,
 	}
 	if oom {
 		s.notifier = chanotify.New()
@@ -98,6 +100,7 @@ type Supervisor struct {
 	statsCollector *statsCollector
 	notifier       *chanotify.Notifier
 	el             eventloop.EventLoop
+	serf           *serf.Serf
 }
 
 // Stop closes all tasks and sends a SIGTERM to each container's pid1 then waits for they to
@@ -227,6 +230,9 @@ func (s *Supervisor) getContainerForPid(pid int) (runtime.Container, error) {
 func (s *Supervisor) SendEvent(evt *Event) {
 	EventsCounter.Inc(1)
 	s.el.Send(&commonEvent{data: evt, sv: s})
+	// TODO check if it's the correct point to intercept
+	// evt.ID is the container name
+	s.serf.UserEvent(string(evt.Type), []byte(s.machine.ID+"/"+evt.ID), true)
 }
 
 func (s *Supervisor) copyIO(stdin, stdout, stderr string, i *runtime.IO) (*copier, error) {

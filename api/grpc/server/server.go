@@ -51,6 +51,11 @@ func (s *apiServer) CreateContainer(ctx context.Context, c *types.CreateContaine
 		return nil, err
 	}
 	sr := <-e.StartResponse
+
+	// broadcast create ID
+	// TODO add node
+	// s.serf.UserEvent("C", []byte(e.ID), true)
+
 	return &types.CreateContainerResponse{
 		Pid: uint32(sr.Pid),
 	}, nil
